@@ -1,12 +1,5 @@
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-from scipy.stats import ks_2samp
 import numpy as np
-import plotly.graph_objs as go
-
-from scipy import stats
-
+import pandas as pd
 def CalcBiVarCDF(x,y,xGrid,yGrid):
     """
     Calculate the bivariate CDF of two given input signals on predefined grids. 
@@ -55,41 +48,32 @@ def CDFDistance(x1, y1, x2, y2):
     KSD = np.max(np.abs(CDF1-CDF2)); # Kolmogorov-Smirnov distance (p=inf)
     return KSD
 
-def CDFDistance2(rho1, v1, rho2, v2, rho_min, rho_max):
-    """
-    For two input 2D signals calculate the "distance" between their CDFs - 
-    averaged (over density bins) distance between two 1D CDFs of speed 
-    calculated for specific density bin. 
-    input: 
-      - rho1: density array of size n
-      - v1: speed array of size n
-      - rho2: density array of size m
-      - v2: speed array of size m
-      - rho_min: lower boundary of density value considered (used for bins creation)
-      - rho_max: upper boundary of density value considered (used for bins creation)
-    output: 
-      - KSD: not negative number from 0 to 1
-    """
-    EMPTY = -1; 
-    nBins = 20; # Now it is not obvious which value to get
-    bins = np.linspace(rho_min, rho_max, nBins+1);
-#    dist1D = EMPTY*np.ones((1,nBins));
-    dist1D = [] ;
-    
-    for iBin in range(nBins):
-        v1_b = v1[(rho1 >= bins[iBin]) * (rho1 <= bins[iBin+1])];        
-        v2_b = v2[(rho2 >= bins[iBin]) * (rho2 <= bins[iBin+1])];
-        st.info(iBin)
-        st.info(f"{v1_b}")
-        st.info(f"{v2_b}")
-        #if ((len(v1_b) > 0) and (len(v2_b) > 0)):
-        [ks2stat, _] = stats.ks_2samp(v1_b, v2_b)
-        print(iBin, ks2stat)
-        dist1D.append(ks2stat)
-    
-    #KSD = np.sum(dist1D[dist1D != EMPTY])/len(dist1D[dist1D != EMPTY]);
-    KSD = np.sum(dist1D)/len(dist1D)
-    return KSD
+
+
+def percentiles(data: pd.DataFrame, dx: float, N: int):
+    """return 10, 50 and 90 percentiles"""
+
+    x_values = np.arange(0, data['rho'].max() + dx, dx)
+    v10_values = []
+    v50_values = []
+    v90_values = []
+
+    for x in x_values:
+        data_points = data[(data['rho'] >= x) & (data['rho'] < x + dx)]
+
+        if len(data_points) < N:
+            break
+
+        v10 = np.percentile(data_points['velocity'], 10)
+        v50 = np.percentile(data_points['velocity'], 50)
+        v90 = np.percentile(data_points['velocity'], 90)
+
+        v10_values.append(v10)
+        v50_values.append(v50)
+        v90_values.append(v90)
+
+    return v10_values, v50_values, v90_values
+ 
 
 
 

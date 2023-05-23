@@ -1,13 +1,21 @@
 import os
+from typing import Dict, List
+
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import streamlit as st
+import numpy as np
 
+import KS
+
+st.set_page_config(
+    page_title="Density and Speed Data", page_icon=":bar_chart:", layout="wide"
+)
 # Base directory where all directories are located
-BASE_DIR = "/Users/chraibi/sciebo/Rimea_VV/single_file/2ColData"
+BASE_DIR = "2ColData"
 
 
-def load_directories(base_dir):
+def load_directories(base_dir: str) -> List[str]:
     """Function to load all directories within the base directory"""
     return [
         dir
@@ -16,7 +24,7 @@ def load_directories(base_dir):
     ]
 
 
-def load_data_from_dir(directory):
+def load_data_from_dir(directory: str) -> pd.DataFrame:
     """Function to load all files data from a directory"""
     dfs = []
     for filename in os.listdir(directory):
@@ -31,37 +39,122 @@ def load_data_from_dir(directory):
     return pd.concat(dfs, ignore_index=True)
 
 
-def plot_data(data, freq):
-    """Function to plot data"""
-    fig, ax = plt.subplots()
+def plot_data(
+    data: Dict[str, pd.DataFrame],
+    data2: pd.DataFrame,
+    freq: int,
+    dx: float,
+    N: int,
+) -> go.Figure:
+    """Function to plot data using Plotly"""
+    fig = go.Figure()
     for dir, df in data.items():
-        ax.plot(df["rho"][::freq], df["velocity"][::freq], ".", label=dir)
-    plt.legend()
-    plt.xlabel(r"$\rho\;\; / 1/m$")
-    plt.ylabel(r"$v\;\; / m/s$")
-    plt.xlim([0, 8])
-    plt.ylim([-0.5, 3])
+        x_values = np.arange(0, df["rho"].max() + dx, dx)
+        fig.add_trace(
+            go.Scatter(
+                x=df["rho"][::freq],
+                y=df["velocity"][::freq],
+                mode="markers",
+                name=dir,
+                marker=dict(opacity=0.1),
+            )
+        )
+        v10, v50, v90 = KS.percentiles(df, dx=dx, N=N)
+        fig.add_trace(
+            # ax.plot(x_values[:len(v10_values)], v10_values, label='V10[x]')
+            go.Scatter(x=x_values[: len(v10)], y=v10, mode="lines", name="V10[x]")
+        )
+        fig.add_trace(
+            go.Scatter(x=x_values[: len(v50)], y=v50, mode="lines", name="V50[x]")
+        )
+        fig.add_trace(
+            go.Scatter(x=x_values[: len(v90)], y=v90, mode="lines", name="V90[x]")
+        )
 
+    if not data2.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=data2["rho"][::freq],
+                y=data2["velocity"][::freq],
+                mode="markers",
+                name="Reference data",
+                marker=dict(symbol="cross", opacity=0.5, size=5, color="red"),
+            )
+        )
+    fig.update_layout(xaxis_title="Density / 1/m", yaxis_title="Speed / m/s")
     return fig
 
 
-st.title("Directory Data Visualization")
+def compare_data(data: Dict[str, pd.DataFrame], data2: pd.DataFrame):
+    """
+    compare two data clouds
+    data and data2 are dataframes with two columns rho and velocity
+    """
 
-# load directories
-directories = load_directories(BASE_DIR)
-directories.sort()
-# selected_directories = st.multiselect("Select directories", directories)
-frequency = st.number_input(
-    "Enter the frequency of the points to be plotted", min_value=1, value=10
-)
-c1, _, c2 = st.columns((0.2, 0.5, 0.7))
-col1, col2, col3 = st.columns(3)
-selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
+    rho_list = []
+    velocity_list = []
+    for _, df in data.items():
+        rho_list.append(df["rho"])
+        velocity_list.append(df["velocity"])
+
+    rho_list = pd.concat(rho_list)
+    velocity_list = pd.concat(velocity_list)
+    return KS.CDFDistance(
+        rho_list, velocity_list, list(data2["rho"]), list(data2["velocity"])
+    )
 
 
-data = {}
-for directory in selected_directories:
-    data[directory] = load_data_from_dir(os.path.join(BASE_DIR, directory))
+if __name__ == "__main__":
+    st.title("Directory Data Visualization")
+    # ================================== Interface
+    c1, c2, c3 = st.columns(3)
+    frequency = c1.number_input(
+        "Enter the frequency of the points to be plotted",
+        min_value=1,
+        value=10,
+        help="The lower the slower",
+    )
+    N = c2.number_input(
+        "N",
+        min_value=5,
+        value=50,
+        help="The minimal data points to consider in calculation of confidence interval",
+    )
+    N = int(N)
+    dx = c3.number_input(
+        "dx",
+        min_value=0.1,
+        value=0.5,
+        help="Density discritisation of density for calculation of confidence interval",
+    )
+    dx = float(dx)
+    do_KS_test = c1.checkbox(
+        "Make KS-test?",
+        help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
+    )
+    st.write("-----------")
+    # ==================================
+    c1, c2 = st.columns((0.5, 0.5))
+    directories: List[str] = load_directories(BASE_DIR)
+    directories.sort()
+    c1.header("Experiments")
+    frequency = int(frequency)
+    selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
+    data = {}
+    for directory in selected_directories:
+        data[directory] = load_data_from_dir(os.path.join(BASE_DIR, directory))
 
-fig = plot_data(data, frequency)
-c2.pyplot(fig)
+    data_to_compare = pd.DataFrame()
+    if do_KS_test:
+        compare_directory = c2.selectbox(
+            "Kolmogorov-Smirnov Test  (0 is perfect match!)",
+            directories,
+            help="Choose data to compare to the selected data from the left column",
+        )
+        data_to_compare = load_data_from_dir(os.path.join(BASE_DIR, compare_directory))
+        if data:
+            result = compare_data(data, data_to_compare)
+            c2.info(f"Distance: {result:.2f}")
+
+    fig = plot_data(data, data_to_compare, frequency, dx, N)
+    c2.plotly_chart(fig)
