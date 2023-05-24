@@ -1,11 +1,12 @@
 import os
+import time
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import numpy as np
-
+import matplotlib.pyplot as plt
 import KS
 
 st.set_page_config(
@@ -41,14 +42,18 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
 
 def plot_data(
     data: Dict[str, pd.DataFrame],
-    data2: pd.DataFrame,
+    reference_data: pd.DataFrame,
+    v10,
+    v50,
+    v90,
     freq: int,
     dx: float,
-    N: int,
 ) -> go.Figure:
     """Function to plot data using Plotly"""
     fig = go.Figure()
+
     for dir, df in data.items():
+        print(dir)
         x_values = np.arange(0, df["rho"].max() + dx, dx)
         fig.add_trace(
             go.Scatter(
@@ -59,9 +64,8 @@ def plot_data(
                 marker=dict(opacity=0.1),
             )
         )
-        v10, v50, v90 = KS.percentiles(df, dx=dx, N=N)
+
         fig.add_trace(
-            # ax.plot(x_values[:len(v10_values)], v10_values, label='V10[x]')
             go.Scatter(x=x_values[: len(v10)], y=v10, mode="lines", name="V10[x]")
         )
         fig.add_trace(
@@ -71,17 +75,63 @@ def plot_data(
             go.Scatter(x=x_values[: len(v90)], y=v90, mode="lines", name="V90[x]")
         )
 
-    if not data2.empty:
+    if not reference_data.empty:
         fig.add_trace(
             go.Scatter(
-                x=data2["rho"][::freq],
-                y=data2["velocity"][::freq],
+                x=reference_data["rho"][::freq],
+                y=reference_data["velocity"][::freq],
                 mode="markers",
                 name="Reference data",
                 marker=dict(symbol="cross", opacity=0.5, size=5, color="red"),
             )
         )
     fig.update_layout(xaxis_title="Density / 1/m", yaxis_title="Speed / m/s")
+    return fig
+
+
+def plot_data2(
+    data: Dict[str, pd.DataFrame],
+    reference_data: pd.DataFrame,
+    v10,
+    v50,
+    v90,
+    freq: int,
+    dx: float,
+):
+    """Function to plot data using matplotlib"""
+    fig = plt.figure()
+
+    for dir, df in data.items():
+        print(dir)
+        x_values = np.arange(0, df["rho"].max() + dx, dx)
+        plt.scatter(
+            df["rho"][::freq],
+            df["velocity"][::freq],
+            label=dir,
+            alpha=0.1,
+        )
+
+        plt.plot(
+            x_values[: len(v10)], v10, "--", linewidth=2, color="k", label="V10[x]"
+        )
+        plt.plot(
+            x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]"
+        )
+        plt.plot(
+            x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]"
+        )
+
+    if not reference_data.empty:
+        plt.plot(
+            reference_data["rho"][::freq],
+            reference_data["velocity"][::freq],
+            "x",
+            label="Reference data",
+            alpha=0.3,
+        )
+    plt.xlabel("Density / 1/m")
+    plt.ylabel("Velocity / m/s")
+    plt.legend()
     return fig
 
 
@@ -141,11 +191,18 @@ if __name__ == "__main__":
     frequency = int(frequency)
     selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
     data = {}
+    start_time = time.perf_counter()
     for directory in selected_directories:
         data[directory] = load_data_from_dir(os.path.join(BASE_DIR, directory))
 
+    end_time = time.perf_counter()
+    runtime = end_time - start_time
+    print(f"Load_data: {runtime:.2f} seconds")
+
     data_to_compare = pd.DataFrame()
     if do_KS_test:
+        print("start KS")
+        start_time = time.perf_counter()
         compare_directory = c2.selectbox(
             "Kolmogorov-Smirnov Test  (0 is perfect match!)",
             directories,
@@ -156,5 +213,34 @@ if __name__ == "__main__":
             result = compare_data(data, data_to_compare)
             c2.info(f"Distance: {result:.2f}")
 
-    fig = plot_data(data, data_to_compare, frequency, dx, N)
-    c2.plotly_chart(fig)
+        end_time = time.perf_counter()
+        runtime = end_time - start_time
+        print(f"KS_test: {runtime:.2f} seconds")
+
+    start_time = time.perf_counter()
+    dfs = []
+    for _, df in data.items():
+        dfs.append(df)
+
+    v10 = []
+    v50 = []
+    v90 = []
+    if dfs:
+        dfs = pd.concat(dfs, ignore_index=True)
+
+        v10, v50, v90 = KS.percentiles(dfs, dx=dx, N=N)
+        end_time = time.perf_counter()
+        print(f"KS.percentiles:  {runtime:.2f} seconds")
+
+    runtime = end_time - start_time
+
+    start_time = time.perf_counter()
+    # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
+    fig2 = plot_data2(data, data_to_compare, v10, v50, v90, frequency, dx)
+    end_time = time.perf_counter()
+    runtime = end_time - start_time
+    print(f"Plot data 2:  {runtime:.2f} seconds")
+
+    # c2.plotly_chart(fig)
+    c2.pyplot(fig2)
+    print("-----------")
