@@ -43,9 +43,9 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
 def plot_data(
     data: Dict[str, pd.DataFrame],
     reference_data: pd.DataFrame,
-    v10,
-    v50,
-    v90,
+    v10: List[float],
+    v50: List[float],
+    v90: List[float],
     freq: int,
     dx: float,
 ) -> go.Figure:
@@ -85,6 +85,7 @@ def plot_data(
                 marker=dict(symbol="cross", opacity=0.5, size=5, color="red"),
             )
         )
+        
     fig.update_layout(xaxis_title="Density / 1/m", yaxis_title="Speed / m/s")
     return fig
 
@@ -126,8 +127,9 @@ def plot_data2(
             reference_data["rho"][::freq],
             reference_data["velocity"][::freq],
             "x",
+            color="red",
             label="Reference data",
-            alpha=0.3,
+            alpha=0.7,
         )
     plt.xlabel("Density / 1/m")
     plt.ylabel("Velocity / m/s")
@@ -135,9 +137,9 @@ def plot_data2(
     return fig
 
 
-def compare_data(data: Dict[str, pd.DataFrame], data2: pd.DataFrame):
+def compare_data(data: Dict[str, pd.DataFrame], data2: pd.DataFrame) -> float:
     """
-    compare two data clouds
+    compare two data clouds using KS-test
     data and data2 are dataframes with two columns rho and velocity
     """
 
@@ -236,11 +238,12 @@ if __name__ == "__main__":
 
     start_time = time.perf_counter()
     # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
+    # c2.plotly_chart(fig)
     fig2 = plot_data2(data, data_to_compare, v10, v50, v90, frequency, dx)
     end_time = time.perf_counter()
     runtime = end_time - start_time
     print(f"Plot data 2:  {runtime:.2f} seconds")
 
-    # c2.plotly_chart(fig)
+    
     c2.pyplot(fig2)
     print("-----------")
