@@ -4,7 +4,35 @@ References to the data
 import streamlit as st
 
 
+def methods():
+    st.header("Methods")
+
+    st.markdown(
+        """
+        :blue[**Perentiles**]  
+        $k-th$ percentile, is a score below which a given percentage $k$ of scores in its frequency distribution falls
+        Here,  $k \in [10, 50, 90]$.
+
+        The density axis is devided in $dx$ intervals. Then the number of data points within an interval of length $dx$ are counted.  
+        $N$ defines the mimnimum number of necessary data within each interval.    
+        """
+    )
+    st.markdown(
+        """
+        :blue[**KS-Test**]  
+        Kolmogorov-Smirnov test according to this paper:  
+        Automated Quality Assessment of Space-Continuous Models for Pedestrian Dynamics  
+        [10.1007/978-3-030-11440-4\_35](https://link.springer.com/content/pdf/10.1007/978-3-030-11440-4\_35.pdf)  
+        2019
+
+        A KS-score equal to zero, means the two datasets that are being compared, are perfectly matching each other.
+        
+    """
+    )
+
+
 def references():
+    st.header("Data")
     c1, c2 = st.columns(2)
     c1.markdown(
         """
@@ -18,7 +46,7 @@ def references():
         """
     - :blue[**02_culture_india_chattaraj2013**]  
     Comparison of pedestrian fundamental diagram across cultures
-    DOI: [10.1142/S0219525909002209](https://www.worldscientific.com/doi/abs/10.1142/S0219525909002209)  
+        DOI: [10.1142/S0219525909002209](https://www.worldscientific.com/doi/abs/10.1142/S0219525909002209)  
     2009
     """
     )

@@ -155,6 +155,8 @@ if __name__ == "__main__":
     tab1, tab2 = st.tabs(["Analysis", "References"])
     # ================================== Interface
     with tab2:
+        docs.methods()
+        st.divider()
         docs.references()
     with tab1:
         c1, c2, c3 = st.columns(3)
