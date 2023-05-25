@@ -20,11 +20,19 @@ def methods():
     st.markdown(
         """
         :blue[**KS-Test**]  
-        Kolmogorov-Smirnov test according to this paper:  
-        Automated Quality Assessment of Space-Continuous Models for Pedestrian Dynamics  
+        Kolmogorov-Smirnov test according to this paper:
+
+        """
+    )
+    st.info(
+        """
+        **Automated Quality Assessment of Space-Continuous Models for Pedestrian Dynamics**  
         [10.1007/978-3-030-11440-4\_35](https://link.springer.com/content/pdf/10.1007/978-3-030-11440-4\_35.pdf)  
         2019
-
+              """
+    )
+    st.markdown(
+        """              
         A KS-score equal to zero, means the two datasets that are being compared, are perfectly matching each other.
         
     """
@@ -49,4 +57,9 @@ def references():
         DOI: [10.1142/S0219525909002209](https://www.worldscientific.com/doi/abs/10.1142/S0219525909002209)  
     2009
     """
+    )
+    c1.markdown(
+        """
+       - TBD ...
+        """
     )
