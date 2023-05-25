@@ -1,3 +1,6 @@
+"""
+Functions to calculate KS and percentiles
+"""
 import numpy as np
 import pandas as pd
 

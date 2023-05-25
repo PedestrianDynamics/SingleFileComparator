@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import matplotlib.pyplot as plt
 import KS
+import docs
 
 st.set_page_config(
     page_title="Density and Speed Data", page_icon=":bar_chart:", layout="wide"
@@ -151,91 +152,97 @@ def compare_data(data: Dict[str, pd.DataFrame], data2: pd.DataFrame) -> float:
 
 
 if __name__ == "__main__":
-    st.title("Directory Data Visualization")
+    tab1, tab2 = st.tabs(["Analysis", "References"])
     # ================================== Interface
-    c1, c2, c3 = st.columns(3)
-    frequency = c1.number_input(
-        "Enter the frequency of the points to be plotted",
-        min_value=1,
-        value=10,
-        help="The lower the slower",
-    )
-    N = c2.number_input(
-        "N",
-        min_value=5,
-        value=50,
-        help="The minimal data points to consider in calculation of confidence interval",
-    )
-    N = int(N)
-    dx = c3.number_input(
-        "dx",
-        min_value=0.1,
-        value=0.5,
-        help="Density discritisation of density for calculation of confidence interval",
-    )
-    dx = float(dx)
-    do_KS_test = c1.checkbox(
-        "Make KS-test?",
-        help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
-    )
-    st.divider()
-    # ==================================
-    c1, c2 = st.columns((0.5, 0.5))
-    directories: List[str] = load_directories(BASE_DIR)
-    directories.sort()
-    c1.header("Experiments")
-    frequency = int(frequency)
-    selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
-    data = {}
-    start_time = time.perf_counter()
-    for directory in selected_directories:
-        data[directory] = load_data_from_dir(os.path.join(BASE_DIR, directory))
-
-    end_time = time.perf_counter()
-    runtime = end_time - start_time
-    print(f"Load_data: {runtime:.2f} seconds")
-
-    data_to_compare = pd.DataFrame()
-    if do_KS_test:
-        print("start KS")
-        start_time = time.perf_counter()
-        compare_directory = c2.selectbox(
-            "Kolmogorov-Smirnov Test  (0 is perfect match!)",
-            directories,
-            help="Choose data to compare to the selected data from the left column",
+    with tab2:
+        docs.references()
+    with tab1:
+        c1, c2, c3 = st.columns(3)
+        frequency = c1.number_input(
+            "Enter the frequency of the points to be plotted",
+            min_value=1,
+            value=10,
+            help="The lower the slower",
         )
-        data_to_compare = load_data_from_dir(os.path.join(BASE_DIR, compare_directory))
-        if data:
-            result = compare_data(data, data_to_compare)
-            c2.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
+        N = c2.number_input(
+            "N",
+            min_value=5,
+            value=50,
+            help="The minimal data points to consider in calculation of confidence interval",
+        )
+        N = int(N)
+        dx = c3.number_input(
+            "dx",
+            min_value=0.1,
+            value=0.5,
+            help="Density discritisation of density for calculation of confidence interval",
+        )
+        dx = float(dx)
+        do_KS_test = c1.checkbox(
+            "Make KS-test?",
+            help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
+        )
+        st.divider()
+        # ==================================
+        c1, c2 = st.columns((0.5, 0.5))
+        directories: List[str] = load_directories(BASE_DIR)
+        directories.sort()
+        c1.header("Experiments")
+        frequency = int(frequency)
+        selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
+        data = {}
+        start_time = time.perf_counter()
+        for directory in selected_directories:
+            data[directory] = load_data_from_dir(os.path.join(BASE_DIR, directory))
+
         end_time = time.perf_counter()
         runtime = end_time - start_time
-        print(f"KS_test: {runtime:.2f} seconds")
+        print(f"Load_data: {runtime:.2f} seconds")
 
-    start_time = time.perf_counter()
-    dfs = []
-    for _, df in data.items():
-        dfs.append(df)
+        data_to_compare = pd.DataFrame()
+        if do_KS_test:
+            print("start KS")
+            start_time = time.perf_counter()
+            compare_directory = c2.selectbox(
+                "Kolmogorov-Smirnov Test  (0 is perfect match!)",
+                directories,
+                help="Choose data to compare to the selected data from the left column",
+            )
+            data_to_compare = load_data_from_dir(
+                os.path.join(BASE_DIR, compare_directory)
+            )
+            if data:
+                result = compare_data(data, data_to_compare)
+                c2.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
+                end_time = time.perf_counter()
+                runtime = end_time - start_time
+                print(f"KS_test: {runtime:.2f} seconds")
 
-    v10 = []
-    v50 = []
-    v90 = []
-    if dfs:
-        dfs = pd.concat(dfs, ignore_index=True)
+        start_time = time.perf_counter()
+        dfs = []
+        for _, df in data.items():
+            dfs.append(df)
 
-        v10, v50, v90, x_values = KS.percentiles(dfs, dx=dx, N=N)
+        v10 = []
+        v50 = []
+        v90 = []
+        x_values = []
+        if dfs:
+            dfs = pd.concat(dfs, ignore_index=True)
+
+            v10, v50, v90, x_values = KS.percentiles(dfs, dx=dx, N=N)
+            end_time = time.perf_counter()
+            print(f"KS.percentiles:  {runtime:.2f} seconds")
+
+        runtime = end_time - start_time
+
+        start_time = time.perf_counter()
+        # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
+        # c2.plotly_chart(fig)
+        fig2 = plot_data2(data, data_to_compare, v10, v50, v90, x_values, frequency, dx)
         end_time = time.perf_counter()
-        print(f"KS.percentiles:  {runtime:.2f} seconds")
+        runtime = end_time - start_time
+        print(f"Plot data 2:  {runtime:.2f} seconds")
 
-    runtime = end_time - start_time
-
-    start_time = time.perf_counter()
-    # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
-    # c2.plotly_chart(fig)
-    fig2 = plot_data2(data, data_to_compare, v10, v50, v90, x_values, frequency, dx)
-    end_time = time.perf_counter()
-    runtime = end_time - start_time
-    print(f"Plot data 2:  {runtime:.2f} seconds")
-
-    c2.pyplot(fig2)
-    print("-----------")
+        c2.pyplot(fig2)
+        print("-----------")
