@@ -85,7 +85,7 @@ def plot_data(
                 marker=dict(symbol="cross", opacity=0.5, size=5, color="red"),
             )
         )
-        
+
     fig.update_layout(xaxis_title="Density / 1/m", yaxis_title="Speed / m/s")
     return fig
 
@@ -96,6 +96,7 @@ def plot_data2(
     v10,
     v50,
     v90,
+    x_values,
     freq: int,
     dx: float,
 ):
@@ -104,7 +105,6 @@ def plot_data2(
 
     for dir, df in data.items():
         print(dir)
-        x_values = np.arange(0, df["rho"].max() + dx, dx)
         plt.scatter(
             df["rho"][::freq],
             df["velocity"][::freq],
@@ -112,15 +112,9 @@ def plot_data2(
             alpha=0.1,
         )
 
-        plt.plot(
-            x_values[: len(v10)], v10, "--", linewidth=2, color="k", label="V10[x]"
-        )
-        plt.plot(
-            x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]"
-        )
-        plt.plot(
-            x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]"
-        )
+    plt.plot(x_values[: len(v10)], v10, "--", linewidth=2, color="k", label="V10[x]")
+    plt.plot(x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]")
+    plt.plot(x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]")
 
     if not reference_data.empty:
         plt.plot(
@@ -184,7 +178,7 @@ if __name__ == "__main__":
         "Make KS-test?",
         help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
     )
-    st.write("-----------")
+    st.divider()
     # ==================================
     c1, c2 = st.columns((0.5, 0.5))
     directories: List[str] = load_directories(BASE_DIR)
@@ -213,8 +207,7 @@ if __name__ == "__main__":
         data_to_compare = load_data_from_dir(os.path.join(BASE_DIR, compare_directory))
         if data:
             result = compare_data(data, data_to_compare)
-            c2.info(f"Distance: {result:.2f}")
-
+            c2.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
         end_time = time.perf_counter()
         runtime = end_time - start_time
         print(f"KS_test: {runtime:.2f} seconds")
@@ -230,7 +223,7 @@ if __name__ == "__main__":
     if dfs:
         dfs = pd.concat(dfs, ignore_index=True)
 
-        v10, v50, v90 = KS.percentiles(dfs, dx=dx, N=N)
+        v10, v50, v90, x_values = KS.percentiles(dfs, dx=dx, N=N)
         end_time = time.perf_counter()
         print(f"KS.percentiles:  {runtime:.2f} seconds")
 
@@ -239,11 +232,10 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
     # c2.plotly_chart(fig)
-    fig2 = plot_data2(data, data_to_compare, v10, v50, v90, frequency, dx)
+    fig2 = plot_data2(data, data_to_compare, v10, v50, v90, x_values, frequency, dx)
     end_time = time.perf_counter()
     runtime = end_time - start_time
     print(f"Plot data 2:  {runtime:.2f} seconds")
 
-    
     c2.pyplot(fig2)
     print("-----------")
