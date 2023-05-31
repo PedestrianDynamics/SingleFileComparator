@@ -200,11 +200,11 @@ if __name__ == "__main__":
         )
         dx = float(dx)
         do_KS_test = c1.checkbox(
-            "Make KS-test?",
+            "KS-test",
             help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
         )
         upload_file = c2.checkbox(
-            "Upload data?",
+            "Upload data",
             help="Data format: two columns. First column for density. Second column for speed",
         )
         st.divider()
@@ -240,7 +240,7 @@ if __name__ == "__main__":
             print("start KS")
             start_time = time.perf_counter()
             compare_directory = c12.selectbox(
-                "Kolmogorov-Smirnov Test  (0 is perfect match!)",
+                "Kolmogorov-Smirnov Test  (1 is perfect match!)",
                 directories,
                 help="Choose data to compare to the selected data from the left column",
             )
@@ -249,8 +249,8 @@ if __name__ == "__main__":
                     os.path.join(BASE_DIR, compare_directory)
                 )
             if data:
-                result = compare_data(data, data_to_compare)
-                c12.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
+                result = 1 - compare_data(data, data_to_compare)
+                c12.metric("Similarity", f"{result*100:.0f}%", f"{result:.2f}")
                 end_time = time.perf_counter()
                 runtime = end_time - start_time
                 print(f"KS_test: {runtime:.2f} seconds")
