@@ -3,7 +3,8 @@ Functions to calculate KS and percentiles
 """
 import numpy as np
 import pandas as pd
-from scipy import stats
+
+# from scipy import stats
 
 
 def CalcBiVarCDF(x, y, xGrid, yGrid):
@@ -80,29 +81,29 @@ def percentiles(data: pd.DataFrame, dx: float, N: int):
     return v10_values, v50_values, v90_values, x_values
 
 
-def confidence_intervall(_data):
-    density = []
-    velocity = []
-    for _, df in _data.items():
-        density.append(df["rho"])
-        velocity.append(df["velocity"])
+# def confidence_intervall(_data):
+#     density = []
+#     velocity = []
+#     for _, df in _data.items():
+#         density.append(df["rho"])
+#         velocity.append(df["velocity"])
 
-    data = np.column_stack((density, velocity))
-    num_samples = 1000
-    bootstrapped_stats = np.empty((num_samples, 2))
+#     data = np.column_stack((density, velocity))
+#     num_samples = 1000
+#     bootstrapped_stats = np.empty((num_samples, 2))
 
-    # Perform bootstrapping
-    for i in range(num_samples):
-        # Resample the data with replacement
-        resampled_data = data[np.random.choice(len(data), size=len(data), replace=True)]
-        bootstrapped_stats[i, 0] = np.mean(resampled_data[:, 0])  # Mean of density
-        bootstrapped_stats[i, 1] = np.mean(resampled_data[:, 1])  # Mean of velocity
-        # Calculate the statistics of interest on the resampled data
+#     # Perform bootstrapping
+#     for i in range(num_samples):
+#         # Resample the data with replacement
+#         resampled_data = data[np.random.choice(len(data), size=len(data), replace=True)]
+#         bootstrapped_stats[i, 0] = np.mean(resampled_data[:, 0])  # Mean of density
+#         bootstrapped_stats[i, 1] = np.mean(resampled_data[:, 1])  # Mean of velocity
+#         # Calculate the statistics of interest on the resampled data
 
-    # Calculate the confidence interval using percentiles
-    confidence_interval = np.percentile(bootstrapped_stats, [2.5, 97.5], axis=0)
+#     # Calculate the confidence interval using percentiles
+#     confidence_interval = np.percentile(bootstrapped_stats, [2.5, 97.5], axis=0)
 
-    # Print the confidence interval for density and velocity
-    print("Confidence Interval for Density:", confidence_interval[0])
-    print("Confidence Interval for Velocity:", confidence_interval[1])
-    return confidence_interval
+#     # Print the confidence interval for density and velocity
+#     print("Confidence Interval for Density:", confidence_interval[0])
+#     print("Confidence Interval for Velocity:", confidence_interval[1])
+#     return confidence_interval
