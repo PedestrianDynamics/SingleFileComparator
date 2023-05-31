@@ -41,6 +41,25 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True)
 
 
+def load_data(filename) -> pd.DataFrame:
+    """Function to load uploaded file data"""
+    if filename:
+        if filename.name.endswith(".txt"):  # assuming files are txt
+            df = pd.read_csv(
+                filename,
+                sep="\t",
+                comment="#",
+                names=["rho", "velocity"],
+            )
+            return df
+        else:
+            st.error("Invalid file type. Please upload a '.txt' file.")
+            return pd.DataFrame()
+    else:
+        st.info("Please upload a file.")
+        return pd.DataFrame()
+
+
 def plot_data(
     data: Dict[str, pd.DataFrame],
     reference_data: pd.DataFrame,
@@ -184,14 +203,20 @@ if __name__ == "__main__":
             "Make KS-test?",
             help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
         )
+        upload_file = c2.checkbox(
+            "Upload data?",
+            help="Data format: two columns. First column for density. Second column for speed",
+        )
         st.divider()
         # ==================================
-        c1, c2 = st.columns((0.5, 0.5))
+
+        # ==================================
+        c11, c12 = st.columns((0.5, 0.5))
         directories: List[str] = load_directories(BASE_DIR)
         directories.sort()
-        c1.header("Experiments")
+        c11.header("Experiments")
         frequency = int(frequency)
-        selected_directories = [dir for dir in directories if c1.checkbox(f"{dir}")]
+        selected_directories = [dir for dir in directories if c11.checkbox(f"{dir}")]
         data = {}
         start_time = time.perf_counter()
         for directory in selected_directories:
@@ -202,20 +227,30 @@ if __name__ == "__main__":
         print(f"Load_data: {runtime:.2f} seconds")
 
         data_to_compare = pd.DataFrame()
+        uploaded_file = pd.DataFrame()
+        if upload_file:
+            uploaded_file = c3.file_uploader(
+                "Upload your data file in txt format", type=["txt"]
+            )
+            if uploaded_file is not None:
+                directories.insert(0, "Uploaded data")
+                data_to_compare = load_data(uploaded_file)
+
         if do_KS_test:
             print("start KS")
             start_time = time.perf_counter()
-            compare_directory = c2.selectbox(
+            compare_directory = c12.selectbox(
                 "Kolmogorov-Smirnov Test  (0 is perfect match!)",
                 directories,
                 help="Choose data to compare to the selected data from the left column",
             )
-            data_to_compare = load_data_from_dir(
-                os.path.join(BASE_DIR, compare_directory)
-            )
+            if compare_directory != "Uploaded data":
+                data_to_compare = load_data_from_dir(
+                    os.path.join(BASE_DIR, compare_directory)
+                )
             if data:
                 result = compare_data(data, data_to_compare)
-                c2.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
+                c12.metric("KS-Distance", f"{result*100:.0f}%", f"{result:.2f}")
                 end_time = time.perf_counter()
                 runtime = end_time - start_time
                 print(f"KS_test: {runtime:.2f} seconds")
@@ -246,5 +281,7 @@ if __name__ == "__main__":
         runtime = end_time - start_time
         print(f"Plot data 2:  {runtime:.2f} seconds")
 
-        c2.pyplot(fig2)
+        c12.pyplot(fig2)
         print("-----------")
+        # ci = KS.confidence_intervall(data)
+        # st.info(ci)
