@@ -53,7 +53,7 @@ def references():
     c2.markdown(
         """
     - :blue[**02_culture_india_chattaraj2013**]  
-    Comparison of pedestrian fundamental diagram across cultures
+    Comparison of pedestrian fundamental diagram across cultures  
         DOI: [10.1142/S0219525909002209](https://www.worldscientific.com/doi/abs/10.1142/S0219525909002209)  
     2009
     """
