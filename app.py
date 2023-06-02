@@ -33,7 +33,7 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
         if filename.endswith(".txt"):  # assuming files are txt
             df = pd.read_csv(
                 os.path.join(directory, filename),
-                sep="\t",
+                sep="\s+",
                 comment="#",
                 names=["rho", "velocity"],
             )
