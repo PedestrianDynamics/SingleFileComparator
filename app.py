@@ -131,10 +131,18 @@ def plot_data2(
             label=dir,
             alpha=0.1,
         )
-
-    plt.plot(x_values[: len(v10)], v10, "--", linewidth=2, color="k", label="V10[x]")
-    plt.plot(x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]")
-    plt.plot(x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]")
+    if v10:
+        plt.plot(
+            x_values[: len(v10)], v10, "--", linewidth=2, color="k", label="V10[x]"
+        )
+    if v50:
+        plt.plot(
+            x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]"
+        )
+    if v90:
+        plt.plot(
+            x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]"
+        )
 
     if not reference_data.empty:
         plt.plot(
@@ -203,7 +211,10 @@ if __name__ == "__main__":
             "KS-test",
             help="Kolmogorov-Smirnov test may be slow, depending on the amount of data",
         )
-        upload_file = c2.checkbox(
+        do_percentiles = c2.checkbox(
+            "Calculate percentiles",
+        )
+        upload_file = c3.checkbox(
             "Upload data",
             help="Data format: two columns. First column for density. Second column for speed",
         )
@@ -264,9 +275,8 @@ if __name__ == "__main__":
         v50 = []
         v90 = []
         x_values = []
-        if dfs:
+        if dfs and do_percentiles:
             dfs = pd.concat(dfs, ignore_index=True)
-
             v10, v50, v90, x_values = KS.percentiles(dfs, dx=dx, N=N)
             end_time = time.perf_counter()
             print(f"KS.percentiles:  {runtime:.2f} seconds")
