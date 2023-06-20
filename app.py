@@ -43,11 +43,12 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
 
 def load_data(filename) -> pd.DataFrame:
     """Function to load uploaded file data"""
+    print("HH")
     if filename:
         if filename.name.endswith(".txt"):  # assuming files are txt
             df = pd.read_csv(
                 filename,
-                sep="\t",
+                sep="\s+",
                 comment="#",
                 names=["rho", "velocity"],
             )
@@ -146,8 +147,8 @@ def plot_data2(
 
     if not reference_data.empty:
         plt.plot(
-            reference_data["rho"][::freq],
-            reference_data["velocity"][::freq],
+            reference_data["rho"],
+            reference_data["velocity"],
             "x",
             color="red",
             label="Reference data",
@@ -235,7 +236,7 @@ if __name__ == "__main__":
 
         end_time = time.perf_counter()
         runtime = end_time - start_time
-        print(f"Load_data: {runtime:.2f} seconds")
+        print(f"Load_data  from directory: {runtime:.2f} seconds")
 
         data_to_compare = pd.DataFrame()
         uploaded_file = pd.DataFrame()
@@ -292,6 +293,8 @@ if __name__ == "__main__":
         print(f"Plot data 2:  {runtime:.2f} seconds")
 
         c12.pyplot(fig2)
+        c12.write("## Uploaded data")
+        c12.dataframe(data_to_compare)
         print("-----------")
         # ci = KS.confidence_intervall(data)
         # st.info(ci)
