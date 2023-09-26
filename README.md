@@ -10,9 +10,7 @@ Comparison of data is facilitated through the use of the KS-test.
 
 ## Try the app online
 
-```
 https://go.fzj.de/validator
-```
 
 ## Insall requirements
 
