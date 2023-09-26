@@ -1,3 +1,9 @@
+
+
+[![DOI](https://zenodo.org/badge/644310429.svg)](https://zenodo.org/badge/latestdoi/644310429)
+
+
+
 # SingleFileComparator
 
 Compare different single-file experiments.
