@@ -14,6 +14,11 @@ Comparison of data is facilitated through the use of the KS-test.
 
 <img width="740" alt="Screenshot 2023-09-26 at 07 59 49" src="https://github.com/PedestrianDynamics/SingleFileComparator/assets/5772973/691d6cda-9758-4b98-8394-2869c9e5beee">
 
+## Geometry definition
+
+ ![Oval_geometry](https://github.com/PedestrianDynamics/SingleFileComparator/assets/5772973/eb608195-5cbc-4ff9-852d-65f1a8b1e4ed)
+
+
 ## Try the app online
 
 https://go.fzj.de/validator
