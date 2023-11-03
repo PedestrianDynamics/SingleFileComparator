@@ -3,6 +3,8 @@ Functions to calculate KS and percentiles
 """
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 
 # from scipy import stats
 
@@ -57,9 +59,23 @@ def CDFDistance(x1, y1, x2, y2):
 
 
 def percentiles(data: pd.DataFrame, dx: float, N: int):
-    """return 10, 50 and 90 percentiles"""
+    """
+    Calculate the 10th, 50th, and 90th percentiles of 'velocity' for subsets of data within intervals of 'rho'.
 
-    x_values = np.arange(0, data["rho"].max() + dx, dx)
+    Parameters:
+    data (pd.DataFrame): The input data containing 'rho' and 'velocity' columns.
+    dx (float): The width of each 'rho' interval.
+    N (int): The minimum number of data points required within a 'rho' interval to calculate percentiles.
+
+    Returns:
+    tuple: A tuple containing lists of the 10th, 50th, and 90th percentile values of 'velocity', and the corresponding 'rho' interval values.
+
+    Note: The function will return percentile values only for the 'rho' intervals with at least N data points.
+    """
+    if "rho" not in data.columns or "velocity" not in data.columns:
+        raise ValueError("Input DataFrame must contain 'rho' and 'velocity' columns.")
+
+    x_values = np.arange(data["rho"].min(), data["rho"].max() + dx, dx)
     v10_values = []
     v50_values = []
     v90_values = []
@@ -81,29 +97,9 @@ def percentiles(data: pd.DataFrame, dx: float, N: int):
     return v10_values, v50_values, v90_values, x_values
 
 
-# def confidence_intervall(_data):
-#     density = []
-#     velocity = []
-#     for _, df in _data.items():
-#         density.append(df["rho"])
-#         velocity.append(df["velocity"])
-
-#     data = np.column_stack((density, velocity))
-#     num_samples = 1000
-#     bootstrapped_stats = np.empty((num_samples, 2))
-
-#     # Perform bootstrapping
-#     for i in range(num_samples):
-#         # Resample the data with replacement
-#         resampled_data = data[np.random.choice(len(data), size=len(data), replace=True)]
-#         bootstrapped_stats[i, 0] = np.mean(resampled_data[:, 0])  # Mean of density
-#         bootstrapped_stats[i, 1] = np.mean(resampled_data[:, 1])  # Mean of velocity
-#         # Calculate the statistics of interest on the resampled data
-
-#     # Calculate the confidence interval using percentiles
-#     confidence_interval = np.percentile(bootstrapped_stats, [2.5, 97.5], axis=0)
-
-#     # Print the confidence interval for density and velocity
-#     print("Confidence Interval for Density:", confidence_interval[0])
-#     print("Confidence Interval for Velocity:", confidence_interval[1])
-#     return confidence_interval
+# Example usage:
+# df = pd.DataFrame({
+#     'rho': np.random.rand(1000),
+#     'velocity': np.random.rand(1000)
+# })
+# print(percentiles(df, 0.1, 50))
