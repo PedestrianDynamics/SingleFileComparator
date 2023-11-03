@@ -45,21 +45,18 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
 def load_data(filename) -> pd.DataFrame:
     """Function to load uploaded file data"""
     if filename:
-        if filename.name.endswith(".txt"):  # assuming files are txt
-            df = pd.read_csv(
-                filename,
-                sep="[;\s]+",
-                engine="python",
-                comment="#",
-                dtype=str,
-                names=["rho", "velocity"],
-            )
-            df["rho"] = df["rho"].str.replace(",", ".").astype(float)
-            df["velocity"] = df["velocity"].str.replace(",", ".").astype(float)
-            return df
-        else:
-            st.error("Invalid file type. Please upload a '.txt' file.")
-            return pd.DataFrame()
+        df = pd.read_csv(
+            filename,
+            sep="[;\s]+",
+            engine="python",
+            comment="#",
+            dtype=str,
+            names=["rho", "velocity"],
+        )
+        df["rho"] = df["rho"].str.replace(",", ".").astype(float)
+        df["velocity"] = df["velocity"].str.replace(",", ".").astype(float)
+        return df
+
     else:
         st.info("Please upload a file.")
         return pd.DataFrame()
@@ -164,7 +161,7 @@ def plot_data2(
     return fig
 
 
-def plot_ks(a, b):
+def plot_ks(a, b, title, xlabel):
     # Calculate ECDF for each dataset
     values, base = np.histogram(a, bins=1000)
     cumulative = np.cumsum(values)
@@ -205,8 +202,8 @@ def plot_ks(a, b):
 
     # Define the layout of the plot
     layout = go.Layout(
-        title="Empirical Cumulative Distribution Function (ECDF) for Speed",
-        xaxis=dict(title="Value"),
+        title=f"Empirical Cumulative Distribution Function (ECDF) for {title}",
+        xaxis=dict(title=f"{xlabel}"),
         yaxis=dict(title="ECDF"),
         hovermode="closest",
     )
@@ -220,8 +217,6 @@ def plot_ks(a, b):
 
 
 def compare_data2(data1: Dict[str, pd.DataFrame], data2: pd.DataFrame) -> float:
-    # Assuming you have two datasets data1 and data2
-
     density = []
     velocity = []
 
@@ -237,8 +232,8 @@ def compare_data2(data1: Dict[str, pd.DataFrame], data2: pd.DataFrame) -> float:
     data_combined = pd.DataFrame({"rho": density_series, "velocity": velocity_series})
 
     ks_statistic, p_value = ks_2samp(data_combined["rho"], data2["rho"])
-    fig1 = plot_ks(data_combined["rho"], data2["rho"])
-    fig2 = plot_ks(data_combined["velocity"], data2["velocity"])
+    fig1 = plot_ks(data_combined["rho"], data2["rho"], "Density", "Density [1/m]")
+    fig2 = plot_ks(data_combined["velocity"], data2["velocity"], "Speed", "Speed [m/s]")
     ks_statistic2, p_value2 = ks_2samp(data_combined["velocity"], data2["velocity"])
     return ks_statistic, p_value, fig1, ks_statistic2, p_value2, fig2
 
@@ -298,8 +293,8 @@ if __name__ == "__main__":
         do_percentiles = c2.checkbox(
             "Calculate percentiles",
         )
-        upload_file = c3.checkbox(
-            "Upload data",
+        upload_files = c3.checkbox(
+            "Upload files",
             help="Data format: two columns. First column for density. Second column for speed",
         )
 
@@ -311,13 +306,15 @@ if __name__ == "__main__":
         c11, c12, c13 = st.columns((0.25, 0.25, 0.25))
         m = c12.empty()
         m2 = c13.empty()
-
-        c11, c12, c13 = st.columns((0.25, 0.5, 0.25))
+        fig_platzhalter = c12.empty()
+        c11, c12 = st.columns((0.5, 0.5))
         directories: List[str] = load_directories(BASE_DIR)
         directories.sort()
-        c11.header("Experiments")
+        st.sidebar.header("Experiments")
         frequency = int(frequency)
-        selected_directories = [dir for dir in directories if c11.checkbox(f"{dir}")]
+        selected_directories = [
+            dir for dir in directories if st.sidebar.checkbox(f"{dir}")
+        ]
         data = {}
         start_time = time.perf_counter()
         for directory in selected_directories:
@@ -325,11 +322,11 @@ if __name__ == "__main__":
 
         end_time = time.perf_counter()
         runtime = end_time - start_time
-        print(f"Load_data  from directory: {runtime:.2f} seconds")
+        print(f"Load_data from directory: {runtime:.2f} seconds")
 
         data_to_compare = pd.DataFrame()
         uploaded_file = pd.DataFrame()
-        if upload_file:
+        if upload_files:
             speed_unit = c3.radio(
                 "Speed unit",
                 options=["m/s", "km/h"],
@@ -337,19 +334,25 @@ if __name__ == "__main__":
                 help="Unit of speed",
             )
 
-            uploaded_file = c3.file_uploader(
-                "Upload your data file in txt format", type=["txt"]
+            uploaded_files = c1.file_uploader(
+                "Upload your data file in txt or csv format",
+                type=["txt", "csv"],
+                accept_multiple_files=True,
             )
-            if uploaded_file is not None:
+            if uploaded_files:
                 directories.insert(0, "Uploaded data")
-                data_to_compare = load_data(uploaded_file)
-                if speed_unit == "km/h":
-                    data_to_compare["velocity"] *= 0.277778
+                for uploaded_file in uploaded_files:
+                    temp_data = load_data(uploaded_file)
+                    if speed_unit == "km/h":
+                        temp_data["velocity"] *= 0.277778
 
+                    data_to_compare = pd.concat(
+                        [data_to_compare, temp_data], ignore_index=True
+                    )
         if do_KS_test:
             print("start KS")
             start_time = time.perf_counter()
-            compare_directory = c12.selectbox(
+            compare_directory = c1.selectbox(
                 "Kolmogorov-Smirnov Test  (1 is perfect match!)",
                 directories,
                 help="Choose data to compare to the selected data from the left column",
@@ -388,12 +391,10 @@ if __name__ == "__main__":
                     delta_color="normal",
                     help="KS-Similarity: 1 - distance between data. p-value < 0.05: Reject the null hypothesis - the distributions are not the same",
                 )
-                # m.write(
-                #     f"Similarity speed: **{ks_stat2*100:.0f}%**, Similarity density: **{ks_stat*100:.0f}%**"
-                # )
-                # m.write(
-                #     f"Similarity speed: **{ks_stat2*100:.0f}%**, Similarity density: **{ks_stat*100:.0f}%**"
-                # )
+                c11.plotly_chart(fig1)
+                c12.plotly_chart(fig2)
+                print(f"velocity: p-value {p_value_s}, ks {ks_stat_s}")
+                print(f"density: p-value {p_value_d}, ks {ks_stat_d}")
 
         start_time = time.perf_counter()
         dfs = []
@@ -420,9 +421,13 @@ if __name__ == "__main__":
         runtime = end_time - start_time
         print(f"Plot data 2:  {runtime:.2f} seconds")
 
-        c12.pyplot(fig2)
-        c13.write("### Uploaded data")
-        c13.dataframe(data_to_compare)
+        fig_platzhalter.pyplot(fig2)
+        if not data_to_compare.empty:
+            st.divider()
+
+            st.write("### Uploaded data")
+            st.dataframe(data_to_compare)
+
         print("-----------")
         # ci = KS.confidence_intervall(data)
         # st.info(ci)
