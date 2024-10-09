@@ -260,13 +260,17 @@ def compare_data(data: Dict[str, pd.DataFrame], data2: pd.DataFrame) -> float:
 
 
 if __name__ == "__main__":
-    tab1, tab2 = st.tabs(["Analysis", "References"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Trajectory data transformation", "Steady state", "Analysis", "References"])
     # ================================== Interface
+    with tab1:
+        c1 = st.columns(1)
     with tab2:
+        c2 = st.columns(1)
+    with tab4:
         docs.methods()
         st.divider()
         docs.references()
-    with tab1:
+    with tab3:
         c1, c2, c3 = st.columns(3)
         frequency = c1.number_input(
             "Enter the frequency of the points to be plotted",
