@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import KS
 import docs
 from scipy.stats import ks_2samp, cumfreq
+import io
 
 st.set_page_config(
     page_title="Density and Speed Data", page_icon=":bar_chart:", layout="wide"
@@ -34,7 +35,7 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
         if filename.endswith(".txt"):  # assuming files are txt
             df = pd.read_csv(
                 os.path.join(directory, filename),
-                sep="\s+",
+                sep=r"\s+",
                 comment="#",
                 names=["rho", "velocity"],
             )
@@ -47,7 +48,7 @@ def load_data(filename) -> pd.DataFrame:
     if filename:
         df = pd.read_csv(
             filename,
-            sep="[;\s]+",
+            sep=r"[;\s]+",
             engine="python",
             comment="#",
             dtype=str,
@@ -122,7 +123,7 @@ def plot_data2(
     freq: int,
     dx: float,
 ):
-    """Function to plot data using matplotlib"""
+    """Function to plot data using matplotlib."""
     fig = plt.figure()
 
     for dir, df in data.items():
@@ -141,6 +142,7 @@ def plot_data2(
         plt.plot(
             x_values[: len(v50)], v50, "-.", linewidth=2, color="k", label="V50[x]"
         )
+
     if v90:
         plt.plot(
             x_values[: len(v90)], v90, "-x", linewidth=2, color="k", label="V90[x]"
@@ -408,6 +410,19 @@ if __name__ == "__main__":
         if dfs and do_percentiles:
             dfs = pd.concat(dfs, ignore_index=True)
             v10, v50, v90, x_values = KS.percentiles(dfs, dx=dx, N=N)
+            df = pd.DataFrame((x_values, v10, v50, v90)).T
+            df.columns = ["Density", "V10", "V50", "V90"]
+            st.dataframe(df)
+            buffer = io.BytesIO()
+            df.to_excel(buffer, index=False)
+            buffer.seek(0)
+            # Create a download button in Streamlit
+            st.download_button(
+                label="Download Excel file",
+                data=buffer,
+                file_name="output_file.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
             end_time = time.perf_counter()
             print(f"KS.percentiles:  {runtime:.2f} seconds")
 
@@ -417,6 +432,7 @@ if __name__ == "__main__":
         # fig = plot_data(data, data_to_compare, v10, v50, v90, frequency, dx)
         # c2.plotly_chart(fig)
         fig2 = plot_data2(data, data_to_compare, v10, v50, v90, x_values, frequency, dx)
+
         end_time = time.perf_counter()
         runtime = end_time - start_time
         print(f"Plot data 2:  {runtime:.2f} seconds")

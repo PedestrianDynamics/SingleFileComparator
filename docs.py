@@ -1,6 +1,7 @@
 """
 References to the data
 """
+
 import streamlit as st
 
 
@@ -8,7 +9,7 @@ def methods():
     st.header("Methods")
 
     st.markdown(
-        """
+        r"""
         :blue[**Perentiles**]  
         $k-th$ percentile, is a score below which a given percentage $k$ of scores in its frequency distribution falls
         Here,  $k \in [10, 50, 90]$.
@@ -25,7 +26,7 @@ def methods():
         """
     )
     st.info(
-        """
+        r"""
         **Automated Quality Assessment of Space-Continuous Models for Pedestrian Dynamics**  
         [10.1007/978-3-030-11440-4\_35](https://link.springer.com/content/pdf/10.1007/978-3-030-11440-4\_35.pdf)  
         2019
