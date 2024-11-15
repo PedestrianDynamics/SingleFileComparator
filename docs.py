@@ -61,6 +61,10 @@ def references():
     )
     c1.markdown(
         """
-       - TBD ...
-        """
+                - :blue[**27_new_beginnings**]  
+                Wheelchair and Phone use During Single File Pedestrian Movement
+
+        DOI: [10.1007/978-981-99-7976-9_23](https://link.springer.com/chapter/10.1007/978-981-99-7976-9_23)  
+    2022
+    """
     )

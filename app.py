@@ -39,6 +39,7 @@ def load_data_from_dir(directory: str) -> pd.DataFrame:
                 comment="#",
                 names=["rho", "velocity"],
             )
+            df = df[df["velocity"] >= 0]
             dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
@@ -285,7 +286,7 @@ if __name__ == "__main__":
             "dx",
             min_value=0.1,
             value=0.2,
-            help="Density discritisation of density for calculation of confidence interval",
+            help="Density discretisation of density for calculation of confidence interval",
         )
         dx = float(dx)
         do_KS_test = c1.checkbox(
